@@ -89,26 +89,36 @@ class Weapon(Sprite):
         self.rotated_image = self.image
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
-        self.rect.center = (self.width / 2, self.height / 2)
+        self.rotated_rect = self.image.get_rect()
+        # self.rect.center = (self.width / 2, self.height / 2)
         self.player = None
+        self.image_rect = self.image.get_rect(center=self.rect.center)
+        self.deg_rotate = 0
     
     def update(self):
         self.mx, self.my = pg.mouse.get_pos()
-        #TODO: Rotate based on mouse pos
-        self.rect.x = self.player.rect.x + self.player.width / 2
-        self.rect.y = self.player.rect.y + self.player.height / 2
+        self.rect.x = self.player.rect.x - (self.width  / 2) + (self.player.width / 2)
+        self.rect.y = self.player.rect.y - (self.height / 2) + (self.player.height / 2)
 
         self.cent_x, self.cent_y = self.player.rect.x + self.player.width / 2 , self.player.rect.y + self.player.height / 2
 
+        #Pythag Theorm
         side1_length = math.sqrt((self.cent_x - self.mx) **2 + ((self.cent_y + self.player.height / 2) - self.my)**2)
         side2_length = self.player.height / 2
         side3_length = math.sqrt((self.cent_x - self.mx) **2 + (self.cent_y - self.my)**2)
+        #Law of cos, and pythag theorm to find angle of mouse
+        self.deg_rotate = math.degrees(math.acos(((side2_length **2) + (side3_length **2) - (side1_length **2)) / (2 * side2_length * side3_length)))
+        print(self.deg_rotate)
+        if self.mx <= self.player.rect.x + (self.player.width / 2):
+            self.deg_rotate *= -1
+        
+        self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate)
+        self.rotated_rect = self.rotated_image.get_rect(center=self.rect.center)
+    
+    def shoot(self):
+        self.bullet = Projectile()
+        self.bullet.weapon = self
 
-        deg_rotate = math.degrees(math.acos(((side2_length **2) + (side3_length **2) - (side1_length **2)) / (2 * side2_length * side3_length)))
-        print(deg_rotate)
-        if self.mx <= self.player.rect.x:
-            deg_rotate *= -1
-        self.rotated_image = pg.transform.rotate(self.image, deg_rotate)
 
 class Projectile(Sprite):
     def __init__(self):
@@ -118,8 +128,14 @@ class Projectile(Sprite):
         self.image = pg.Surface((self.width, self.height))
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
+        self.speed = 5
+        self.weapon = None
+        x = self.weapon.rotated_image.x
+        y = self.weapon.rotated_image.y
+        self.pos = pg.Vector2D(x,y)
+        self.velocity = pg.Vector2D().create_from_angle(self.weapon.deg_rotate, self.speed, return_instance=True)
     def update(self):
-        pass
+        self.pos.add(self.velocity)
 
 class Platform(Sprite):
     def __init__(self):
