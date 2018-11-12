@@ -6,11 +6,6 @@ from pygame.sprite import Sprite
 import random, math
 from settings import *
 
-
-# player_HEIGHT = 45
-# player_WIDTH = 35
-
-
 class Player(Sprite):
     def __init__(self):
         Sprite.__init__(self)
@@ -73,10 +68,11 @@ class Enemy(Sprite):
         self.c = math.sqrt((self.follow.rect.x - self.rect.x) **2 + (self.follow.rect.y - self.rect.y)**2)
 
         if self.c != 0:
-            #Create a multiplier from the distance between the player, 
+            #Create a multiplier from the distance between the player 
             self.x = (self.follow.rect.x - self.rect.x) / self.c
             self.y = (self.follow.rect.y - self.rect.y) / self.c
 
+        #use multiplier to effect speed
         self.rect.x += self.x * self.speed
         self.rect.y += self.y * self.speed
 
@@ -89,26 +85,41 @@ class Weapon(Sprite):
         self.rotated_image = self.image
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
-        self.rect.center = (self.width / 2, self.height / 2)
+        self.rotated_rect = self.image.get_rect()
+        # self.rect.center = (self.width / 2, self.height / 2)
         self.player = None
+        self.image_rect = self.image.get_rect(center=self.rect.center)
+        self.deg_rotate = 0
     
     def update(self):
         self.mx, self.my = pg.mouse.get_pos()
-        #TODO: Rotate based on mouse pos
-        self.rect.x = self.player.rect.x + self.player.width / 2
-        self.rect.y = self.player.rect.y + self.player.height / 2
+        m1, m2, m3 = pg.mouse.get_pressed()
+        self.rect.x = self.player.rect.x - (self.width  / 2) + (self.player.width / 2)
+        self.rect.y = self.player.rect.y - (self.height / 2) + (self.player.height / 2)
 
         self.cent_x, self.cent_y = self.player.rect.x + self.player.width / 2 , self.player.rect.y + self.player.height / 2
 
+        #Pythag Theorm
         side1_length = math.sqrt((self.cent_x - self.mx) **2 + ((self.cent_y + self.player.height / 2) - self.my)**2)
         side2_length = self.player.height / 2
         side3_length = math.sqrt((self.cent_x - self.mx) **2 + (self.cent_y - self.my)**2)
+        #Law of cos, and pythag theorm to find angle of mouse
+        self.deg_rotate = math.degrees(math.acos(((side2_length **2) + (side3_length **2) - (side1_length **2)) / (2 * side2_length * side3_length)))
+        print(self.deg_rotate)
+        if self.mx <= self.player.rect.x + (self.player.width / 2):
+            self.deg_rotate *= -1
 
-        deg_rotate = math.degrees(math.acos(((side2_length **2) + (side3_length **2) - (side1_length **2)) / (2 * side2_length * side3_length)))
-        print(deg_rotate)
-        if self.mx <= self.player.rect.x:
-            deg_rotate *= -1
-        self.rotated_image = pg.transform.rotate(self.image, deg_rotate)
+        pivot_x, pivot_y = self.rect.center
+        self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate)
+        self.rotated_rect = self.rotated_image.get_rect(center=(pivot_x, pivot_y))
+
+        if m1 == 1:
+            self.shoot()
+
+    def shoot(self):
+        self.bullet = Projectile()
+        self.bullet.weapon = self
+
 
 class Projectile(Sprite):
     def __init__(self):
@@ -118,8 +129,15 @@ class Projectile(Sprite):
         self.image = pg.Surface((self.width, self.height))
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
+        self.speed = 5
+        self.weapon = None
+        
     def update(self):
-        pass
+        self.change_x = math.cos(self.weapon.deg_rotate) * self.speed
+        self.change_y = math.sin(self.weapon.deg_rotate) * self.speed
+
+        self.rect.x += 
+        self.rect.y += 
 
 class Platform(Sprite):
     def __init__(self):

@@ -31,10 +31,10 @@ class Game():
         #Add platform
         self.plat = Platform()
         self.all_sprites.add(self.plat)
-        self.enemy = Enemy()
-        self.all_sprites.add(self.enemy)
-        # #Set variable for the enemy to follow our player
-        self.enemy.follow = self.player
+        # self.enemy = Enemy()
+        # self.all_sprites.add(self.enemy)
+        # # #Set variable for the enemy to follow our player
+        # self.enemy.follow = self.player
         #Call run
         self.run()
 
@@ -59,12 +59,12 @@ class Game():
 
     def update(self):
         self.all_sprites.update()
-        print(pg.sprite.groupcollide(self.all_sprites, self.all_sprites, False, False))
+
     
     def draw(self):
         self.screen.fill((35, 40, 35))
         self.all_sprites.draw(self.screen)
-        self.screen.blit(self.player.weapon.rotated_image, self.player.weapon.rect)
+        self.screen.blit(self.player.weapon.rotated_image, self.player.weapon.rotated_rect)
         pg.draw.circle(self.screen, WHITE, pg.mouse.get_pos(), 8, 1)
         # Make a buffer screen, then make the buffer the main screen (Less lag)
         pg.display.flip()
