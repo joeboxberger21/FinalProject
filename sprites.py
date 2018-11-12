@@ -93,7 +93,10 @@ class Weapon(Sprite):
     
     def update(self):
         self.mx, self.my = pg.mouse.get_pos()
+<<<<<<< HEAD
         m1, m2, m3 = pg.mouse.get_pressed()
+=======
+>>>>>>> d0421d6dc986ba3a2fcc1acd3684edc2dc918fc5
         self.rect.x = self.player.rect.x - (self.width  / 2) + (self.player.width / 2)
         self.rect.y = self.player.rect.y - (self.height / 2) + (self.player.height / 2)
 
@@ -108,6 +111,7 @@ class Weapon(Sprite):
         print(self.deg_rotate)
         if self.mx <= self.player.rect.x + (self.player.width / 2):
             self.deg_rotate *= -1
+<<<<<<< HEAD
 
         pivot_x, pivot_y = self.rect.center
         self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate)
@@ -116,6 +120,12 @@ class Weapon(Sprite):
         if m1 == 1:
             self.shoot()
 
+=======
+        
+        self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate)
+        self.rotated_rect = self.rotated_image.get_rect(center=self.rect.center)
+    
+>>>>>>> d0421d6dc986ba3a2fcc1acd3684edc2dc918fc5
     def shoot(self):
         self.bullet = Projectile()
         self.bullet.weapon = self
@@ -131,6 +141,7 @@ class Projectile(Sprite):
         self.rect = self.image.get_rect()
         self.speed = 5
         self.weapon = None
+<<<<<<< HEAD
         
     def update(self):
         self.change_x = math.cos(self.weapon.deg_rotate) * self.speed
@@ -138,6 +149,14 @@ class Projectile(Sprite):
 
         self.rect.x += 
         self.rect.y += 
+=======
+        x = self.weapon.rotated_image.x
+        y = self.weapon.rotated_image.y
+        self.pos = pg.Vector2D(x,y)
+        self.velocity = pg.Vector2D().create_from_angle(self.weapon.deg_rotate, self.speed, return_instance=True)
+    def update(self):
+        self.pos.add(self.velocity)
+>>>>>>> d0421d6dc986ba3a2fcc1acd3684edc2dc918fc5
 
 class Platform(Sprite):
     def __init__(self):
