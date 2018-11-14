@@ -22,8 +22,7 @@ class Player(Sprite):
         self.vy = 0
         self.speed = 5
         self.falling = False
-        self.weapon = Weapon()
-        self.weapon.player = self
+        self.weapon = Weapon(self)
     
     def update(self):
         self.weapon.update()
@@ -47,8 +46,10 @@ class Player(Sprite):
         self.rect.y += self.vy
 
 class Enemy(Sprite):
-    def __init__(self):
+    def __init__(self, follow, health, bulletgroup):
         Sprite.__init__(self)
+        self.health = health
+        self.bulletgroup = bulletgroup
         self.width = 35
         self.height = 45
         self.image = pg.Surface((self.width, self.height))
@@ -61,10 +62,13 @@ class Enemy(Sprite):
         self.rect.y = 0
         self.x = 0
         self.y = 0
-        self.follow = None
+        self.follow = follow
         self.speed = 3
     
     def update(self):
+        # Delete the object if all health is lost
+        if self.health <= 0:
+            self.kill()
         #Pythag to find distance from player
         self.c = math.sqrt((self.follow.rect.x - self.rect.x) **2 + (self.follow.rect.y - self.rect.y)**2)
 
@@ -77,9 +81,42 @@ class Enemy(Sprite):
         self.rect.x += self.x * self.speed
         self.rect.y += self.y * self.speed
 
-class Weapon(Sprite):
-    def __init__(self):
+        bullet_collisions = pg.sprite.spritecollide(self, self.bulletgroup, True)
+        #If there is bullet from the player colliding with the enemy, it will add it to the group, and if there is anything in this group, remove health
+        if bullet_collisions:
+            self.health -= self.follow.weapon.damage
+
+class Enemy_Spawner(Sprite):
+    def __init__(self, enemy_type, max_enemies):
         Sprite.__init__(self)
+        self.image = pg.Surface((15, 15))
+        self.image.fill((250, 250, 50))
+        self.rect = self.image.get_rect()
+        self.enemy_type = enemy_type
+        self.max_enemies = max_enemies
+        self.current_spawned = 0
+        self.enemies_group = pg.sprite.Group()
+        self.spawn_interval = 1000
+        self.last_time = 0
+    
+    def spawn(self):
+        self.enemy = self.enemy_type
+        self.enemies_group.add(self.enemy)
+        self.last_time = pg.time.get_ticks()
+        print('ENEMY SPAWNED!')
+        print(self.enemies_group)
+
+    def update(self):
+        if self.current_spawned < self.max_enemies and (pg.time.get_ticks() - self.last_time) >= self.spawn_interval and self.current_spawned < self.max_enemies:
+            self.spawn()
+            self.current_spawned += 1
+        self.enemies_group.update()
+            
+
+class Weapon(Sprite):
+    def __init__(self, player):
+        Sprite.__init__(self)
+        self.damage = 10
         self.width = 10
         self.height = 60
         self.image = pg.Surface((self.width, self.height)).convert_alpha()
@@ -88,7 +125,7 @@ class Weapon(Sprite):
         self.rect = self.image.get_rect()
         self.rotated_rect = self.image.get_rect()
         # self.rect.center = (self.width / 2, self.height / 2)
-        self.player = None
+        self.player = player
         self.image_rect = self.image.get_rect(center=self.rect.center)
         self.deg_rotate = 0
         self.bullet_group = pg.sprite.Group()
@@ -97,7 +134,6 @@ class Weapon(Sprite):
     def update(self):
         self.mx, self.my = pg.mouse.get_pos()
         m1, m2, m3 = pg.mouse.get_pressed()
-        print(self.bullet_group)
         if self.bullet_group != None:
             self.bullet_group.update()
         self.rect.x = self.player.rect.x - (self.width  / 2) + (self.player.width / 2)
@@ -124,7 +160,7 @@ class Weapon(Sprite):
                 self.shoot()
 
     def shoot(self):
-        self.bullet = Projectile(self, (self.rect.x, self.rect.y))
+        self.bullet = Projectile(self, self.rect.center)
         self.bullet_group.add(self.bullet)
 
 
@@ -137,7 +173,7 @@ class Projectile(Sprite):
         self.image = pg.Surface((self.width, self.height)).convert_alpha()
         self.image.fill(RED)
         self.rect = self.image.get_rect(center=pos)
-        self.speed = 5
+        self.speed = 6
         self.pos = pg.math.Vector2(pos)
         self.vel = pg.math.Vector2(0, self.speed).rotate(-weapon.deg_rotate)
         self.creation_time = pg.time.get_ticks()
@@ -147,8 +183,8 @@ class Projectile(Sprite):
         self.pos += self.vel
         self.rect.center = self.pos  # Update the rect as well.
 
-        #If nothing collides with bullet, delete it after 30 sec
-        if (pg.time.get_ticks() - self.creation_time) > 20000:
+        #If nothing collides with bullet, delete it after 10 sec
+        if (pg.time.get_ticks() - self.creation_time) > 10000:
             self.kill()
         
 class Wall(Sprite):

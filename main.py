@@ -25,14 +25,17 @@ class Game():
         
     def new(self):
         self.all_sprites = pg.sprite.Group()
+        self.all_enemies = pg.sprite.Group()
         #Create a player and enemy, and then add them to our sprite group
         self.player = Player()
         self.all_sprites.add(self.player)
-        # self.enemy = Enemy()
+
+        # self.enemy = Enemy(self.player, 100, self.player.weapon.bullet_group)
         # self.all_sprites.add(self.enemy)
-        # # #Set variable for the enemy to follow our player
-        # self.enemy.follow = self.player
-        #Call run
+        self.spawner = Enemy_Spawner(Enemy(self.player, 100, self.player.weapon.bullet_group), 5)
+        self.all_sprites.add(self.spawner)
+        self.all_sprites.add(self.spawner.enemies_group)
+        # Call run
         self.run()
 
     def run(self):
@@ -62,6 +65,7 @@ class Game():
         self.screen.fill((15, 20, 15))
         self.all_sprites.draw(self.screen)
         self.player.weapon.bullet_group.draw(self.screen)
+        self.spawner.enemies_group.draw(self.screen)
         self.screen.blit(self.player.weapon.rotated_image, self.player.weapon.rotated_rect)
         pg.draw.circle(self.screen, WHITE, pg.mouse.get_pos(), 8, 1)
         # Make a buffer screen, then make the buffer the main screen (Less lag)
