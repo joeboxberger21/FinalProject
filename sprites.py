@@ -3,6 +3,7 @@
 
 import pygame as pg
 from pygame.sprite import Sprite
+import pygame.math
 import random, math
 from settings import *
 
@@ -12,7 +13,7 @@ class Player(Sprite):
         self.width = 35
         self.height = 45
         self.image = pg.Surface((self.width, self.height))
-        self.image.fill(RED)
+        self.image.fill(BLUE)
         self.rect = self.image.get_rect()
         self.rect.center = (self.width / 2, self.height / 2)
         self.rect.x = WIDTH / 2
@@ -90,13 +91,15 @@ class Weapon(Sprite):
         self.player = None
         self.image_rect = self.image.get_rect(center=self.rect.center)
         self.deg_rotate = 0
+        self.bullet_group = pg.sprite.Group()
+        self.shooting = False
     
     def update(self):
         self.mx, self.my = pg.mouse.get_pos()
-<<<<<<< HEAD
         m1, m2, m3 = pg.mouse.get_pressed()
-=======
->>>>>>> d0421d6dc986ba3a2fcc1acd3684edc2dc918fc5
+        print(self.bullet_group)
+        if self.bullet_group != None:
+            self.bullet_group.update()
         self.rect.x = self.player.rect.x - (self.width  / 2) + (self.player.width / 2)
         self.rect.y = self.player.rect.y - (self.height / 2) + (self.player.height / 2)
 
@@ -108,58 +111,48 @@ class Weapon(Sprite):
         side3_length = math.sqrt((self.cent_x - self.mx) **2 + (self.cent_y - self.my)**2)
         #Law of cos, and pythag theorm to find angle of mouse
         self.deg_rotate = math.degrees(math.acos(((side2_length **2) + (side3_length **2) - (side1_length **2)) / (2 * side2_length * side3_length)))
-        print(self.deg_rotate)
         if self.mx <= self.player.rect.x + (self.player.width / 2):
             self.deg_rotate *= -1
-<<<<<<< HEAD
-
-        pivot_x, pivot_y = self.rect.center
-        self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate)
-        self.rotated_rect = self.rotated_image.get_rect(center=(pivot_x, pivot_y))
-
-        if m1 == 1:
-            self.shoot()
-
-=======
-        
         self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate)
         self.rotated_rect = self.rotated_image.get_rect(center=self.rect.center)
-    
->>>>>>> d0421d6dc986ba3a2fcc1acd3684edc2dc918fc5
+
+        if m1 == 0:
+            self.shooting = False
+
+        if self.shooting == False and m1 == 1:
+                self.shooting = True
+                self.shoot()
+
     def shoot(self):
-        self.bullet = Projectile()
-        self.bullet.weapon = self
+        self.bullet = Projectile(self, (self.rect.x, self.rect.y))
+        self.bullet_group.add(self.bullet)
 
 
 class Projectile(Sprite):
-    def __init__(self):
+    def __init__(self, weapon, pos):
         Sprite.__init__(self)
-        self.width = 5
-        self.height = 5
-        self.image = pg.Surface((self.width, self.height))
-        self.image.fill(WHITE)
-        self.rect = self.image.get_rect()
+        self.weapon = weapon
+        self.width = 10
+        self.height = 10
+        self.image = pg.Surface((self.width, self.height)).convert_alpha()
+        self.image.fill(RED)
+        self.rect = self.image.get_rect(center=pos)
         self.speed = 5
-        self.weapon = None
-<<<<<<< HEAD
+        self.pos = pg.math.Vector2(pos)
+        self.vel = pg.math.Vector2(0, self.speed).rotate(-weapon.deg_rotate)
+        self.creation_time = pg.time.get_ticks()
         
     def update(self):
-        self.change_x = math.cos(self.weapon.deg_rotate) * self.speed
-        self.change_y = math.sin(self.weapon.deg_rotate) * self.speed
+        # Add the velocity to the pos to move the sprite.
+        self.pos += self.vel
+        self.rect.center = self.pos  # Update the rect as well.
 
-        self.rect.x += 
-        self.rect.y += 
-=======
-        x = self.weapon.rotated_image.x
-        y = self.weapon.rotated_image.y
-        self.pos = pg.Vector2D(x,y)
-        self.velocity = pg.Vector2D().create_from_angle(self.weapon.deg_rotate, self.speed, return_instance=True)
-    def update(self):
-        self.pos.add(self.velocity)
->>>>>>> d0421d6dc986ba3a2fcc1acd3684edc2dc918fc5
-
-class Platform(Sprite):
-    def __init__(self):
+        #If nothing collides with bullet, delete it after 30 sec
+        if (pg.time.get_ticks() - self.creation_time) > 20000:
+            self.kill()
+        
+class Wall(Sprite):
+    def __init__(self, x, y, w, h):
         Sprite.__init__(self)
         self.width = 500
         self.height = 20

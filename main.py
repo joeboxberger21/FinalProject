@@ -28,9 +28,6 @@ class Game():
         #Create a player and enemy, and then add them to our sprite group
         self.player = Player()
         self.all_sprites.add(self.player)
-        #Add platform
-        self.plat = Platform()
-        self.all_sprites.add(self.plat)
         # self.enemy = Enemy()
         # self.all_sprites.add(self.enemy)
         # # #Set variable for the enemy to follow our player
@@ -62,8 +59,9 @@ class Game():
 
     
     def draw(self):
-        self.screen.fill((35, 40, 35))
+        self.screen.fill((15, 20, 15))
         self.all_sprites.draw(self.screen)
+        self.player.weapon.bullet_group.draw(self.screen)
         self.screen.blit(self.player.weapon.rotated_image, self.player.weapon.rotated_rect)
         pg.draw.circle(self.screen, WHITE, pg.mouse.get_pos(), 8, 1)
         # Make a buffer screen, then make the buffer the main screen (Less lag)
