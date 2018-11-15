@@ -45,6 +45,32 @@ class Player(Sprite):
         self.rect.x += self.vx
         self.rect.y += self.vy
 
+class Enemy_Spawner(Sprite):
+    def __init__(self, enemy_type, max_enemies):
+        Sprite.__init__(self)
+        # global enemy_type_glo = enemy_type
+        self.image = pg.Surface((15, 15))
+        self.image.fill((250, 250, 50))
+        self.rect = self.image.get_rect()
+        self.enemy_type = enemy_type
+        self.max_enemies = max_enemies
+        self.enemies_group = pg.sprite.Group()
+        self.spawn_interval = 1000
+        self.last_time = 0
+
+    def update(self):
+        if len(self.enemies_group) < self.max_enemies and (pg.time.get_ticks() - self.last_time) >= self.spawn_interval:
+            self.spawn()
+        if self.enemies_group != None:
+            self.enemies_group.update()
+
+    def spawn(self):
+        self.enemy = self.enemy_type
+        self.enemies_group.add(self.enemy)
+        self.last_time = pg.time.get_ticks()
+        print('Enemy Attempting to Spawn!')
+        print(self.enemies_group)
+
 class Enemy(Sprite):
     def __init__(self, follow, health, bulletgroup):
         Sprite.__init__(self)
@@ -85,32 +111,6 @@ class Enemy(Sprite):
         #If there is bullet from the player colliding with the enemy, it will add it to the group, and if there is anything in this group, remove health
         if bullet_collisions:
             self.health -= self.follow.weapon.damage
-
-class Enemy_Spawner(Sprite):
-    def __init__(self, enemy_type, max_enemies):
-        Sprite.__init__(self)
-        self.image = pg.Surface((15, 15))
-        self.image.fill((250, 250, 50))
-        self.rect = self.image.get_rect()
-        self.enemy_type = enemy_type
-        self.max_enemies = max_enemies
-        self.current_spawned = 0
-        self.enemies_group = pg.sprite.Group()
-        self.spawn_interval = 1000
-        self.last_time = 0
-    
-    def spawn(self):
-        self.enemy = self.enemy_type
-        self.enemies_group.add(self.enemy)
-        self.last_time = pg.time.get_ticks()
-        print('ENEMY SPAWNED!')
-        print(self.enemies_group)
-
-    def update(self):
-        if self.current_spawned < self.max_enemies and (pg.time.get_ticks() - self.last_time) >= self.spawn_interval and self.current_spawned < self.max_enemies:
-            self.spawn()
-            self.current_spawned += 1
-        self.enemies_group.update()
             
 
 class Weapon(Sprite):
@@ -136,6 +136,7 @@ class Weapon(Sprite):
         m1, m2, m3 = pg.mouse.get_pressed()
         if self.bullet_group != None:
             self.bullet_group.update()
+        
         self.rect.x = self.player.rect.x - (self.width  / 2) + (self.player.width / 2)
         self.rect.y = self.player.rect.y - (self.height / 2) + (self.player.height / 2)
 

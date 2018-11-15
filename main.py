@@ -34,7 +34,7 @@ class Game():
         # self.all_sprites.add(self.enemy)
         self.spawner = Enemy_Spawner(Enemy(self.player, 100, self.player.weapon.bullet_group), 5)
         self.all_sprites.add(self.spawner)
-        self.all_sprites.add(self.spawner.enemies_group)
+        self.spawner.rect = (200, 500)
         # Call run
         self.run()
 
