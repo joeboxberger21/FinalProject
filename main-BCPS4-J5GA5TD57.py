@@ -1,5 +1,5 @@
 #This file was created by Joe Boxberger
-#GitHub link: https://github.com/joeboxberger21/FinalProject
+#GitHub link: https://github.com/joeboxberger21/Demo
 
 #====================SOURCES====================
 #goo.gl/2KMivS
@@ -7,25 +7,6 @@
 #https://www.pygame.org/project-Rect+Collision+Response-1061-.html
 #https://www.youtube.com/watch?v=3zV2ewk-IGU
 #===============================================
-
-'''
-====================RECENTLY ADDED====================
-- Random room genration
-- Find all doors on the inside of the map and open them (Player in contained in the map, but can move room to room)
-- Room detects when player enters (eventually will close doors, then reopen when all enemies are dead)
-======================================================
-
-====================BUGS====================
-- Room generation bug where rooms are on edges of map
-- When player enters room, spawers are created but not drawing or spawning
-============================================
-
-====================TODOs====================
-- Enemy Colision
-- Start adding sprite images
-- Enemy collision with player and health system
-=============================================
-'''
 
 from settings import *
 from sprites import *
@@ -47,7 +28,6 @@ class Game():
     def new(self):
         self.all_sprites = pg.sprite.Group()
         self.solid_objects = pg.sprite.Group()
-        self.all_enemies = pg.sprite.Group()
         self.player = Player(self.solid_objects)
         self.all_sprites.add(self.player, self.player.weapon, self.player.weapon.bullet_group)
 
@@ -87,19 +67,19 @@ class Game():
 
     
     def draw(self):
-        self.screen.fill((5, 10, 5))
+        self.screen.fill((15, 20, 20))
 
         for sprite in self.all_sprites:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
 
         for sprite in self.player.weapon.bullet_group:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
+        
+        for sprite in self.spawner.enemy.weapon.bullet_group:
+            self.screen.blit(sprite.image, self.camera.apply(sprite))
 
-        try:
-            for sprite in self.all_enemies:
-                self.screen.blit(sprite.image, self.camera.apply(sprite))
-        except:
-            pass
+        for sprite in self.spawner.enemies_group:
+            self.screen.blit(sprite.image, self.camera.apply(sprite))
         
         #TODO: Weapon rotation in weapon class instead of in game class
         # self.screen.blit(self.spawner.enemy.weapon.rotated_image, self.spawner.enemy.weapon.rotated_rect)
@@ -115,25 +95,23 @@ class Game():
         pass
 
     def generate_room(self, x, y, w, h):
-        self.new_room = Room(x, y, w, h, self.player)
-        print(self.new_room.rect)
-        self.solid_objects.add(self.new_room.wall_group)
-        self.all_sprites.add(self.new_room.wall_group, self.new_room)
-        self.all_rooms.add(self.new_room)
+        new_room = Room(x, y, w, h)
+        self.solid_objects.add(new_room.wall_group)
+        self.all_sprites.add(new_room.wall_group, new_room)
 
-        #One by one check if any of our new doors, collide with anyother door, if they door move both to make a pathway
-        for new_door in self.new_room.room_doors:
-            for door in self.all_doors:
-                if pg.sprite.collide_rect(new_door, door):
-                    self.new_room.openable_doors.add(new_door, door)
-                    self.new_room.open_doors()
-        self.all_doors.add(self.new_room.room_doors)
+        spawners_amount = random.randint(1, 3)
+        for i in range(spawners_amount):
+            enemy_amount = random.randint(2, 5)
+            self.spawner = Enemy_Spawner(0, self.player, 100, self.player.weapon.bullet_group)
+            self.spawner.rect.x, self.spawner.rect.y = (random.randint(x + new_room.wall_thickness, x + new_room.width - new_room.wall_thickness), random.randint(y + new_room.wall_thickness, y + new_room.height - new_room.wall_thickness))
+            print('spawner @: ' + str(self.spawner.rect))
+            self.all_sprites.add(self.spawner)
+        self.all_rooms.add(new_room)
 
 
 
     def generate_level(self):
         self.all_rooms = pg.sprite.Group()
-        self.all_doors = pg.sprite.Group()
         #Room path generator
         level = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -148,6 +126,8 @@ class Game():
         current_tile_x, current_tile_y = 4, 4
         current_room = 1
 
+        current_room_x = 0
+        current_room_y = 0
         #TODO: Fix level generation bug where there are rooms away from path
         while current_room <= max_rooms:
             direction = random.randint(1, 4)
@@ -156,38 +136,48 @@ class Game():
                     if level[current_tile_y - 1][current_tile_x] == 0:
                         current_tile_y -= 1
                         current_room += 1
+                        current_room_y -= room_height
+                        self.generate_room(current_room_x, current_room_y, room_width, room_height, 'd')
                 if direction == 2:
                     if level[current_tile_y + 1][current_tile_x] == 0:
                         current_tile_y += 1
                         current_room += 1
+                        current_room_y += room_height
+                        self.generate_room(current_room_x, current_room_y, room_width, room_height, 'u')
                 if direction == 3:
                     if level[current_tile_y][current_tile_x - 1] == 0:
                         current_tile_x -= 1
                         current_room += 1
+                        current_room_x -= room_width
+                        self.generate_room(current_room_x, current_room_y, room_width, room_height, 'r')
                 if direction == 4:
                     if level[current_tile_y][current_tile_x + 1] == 0:
                         current_tile_x += 1
                         current_room += 1
+                        current_room_x += room_width
+                        self.generate_room(current_room_x, current_room_y, room_width, room_height, 'l')
                 level[current_tile_y][current_tile_x] = 1
             except:
                 current_tile_x = 4
                 current_tile_y = 4
                 continue
         
-        current_room_x = 0
-        current_room_y = 0
-        current_row = 0
-        room_width = 1300
-        room_height = 800
-        for row in level:
-            if 1 in row:
-                current_row += 1
-            current_room_x = 0
-            current_room_y += room_height
-            for tile in row:
-                current_room_x += room_width
-                if tile == 1:
-                    self.generate_room(current_room_x, current_room_y, room_width, room_height)
+        # current_row = 0
+        # for row in level:
+        #     room_height = 800
+        #     if 1 in row:
+        #         current_row += 1
+        #     current_room_x = 0
+        #     current_room_y += room_height
+        #     for tile in row:
+        #         room_width = 1300
+        #         current_room_x += room_width
+        #         if tile == 1:
+        #             self.generate_room(current_room_x, current_room_y, room_width, room_height, )
+
+        
+        #TODO: Create doorways, and close with enemies
+            
 
         for row in level:
             print(row)
