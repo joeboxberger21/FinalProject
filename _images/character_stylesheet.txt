@@ -1,0 +1,119 @@
+.sprite {
+    background-image: url(spritesheet.png);
+    background-repeat: no-repeat;
+    display: block;
+}
+
+.sprite-robo_0000_c_a_d-gun2 {
+    width: 297px;
+    height: 155px;
+    background-position: -5px -5px;
+}
+
+.sprite-robo_0006_Layer-16-copy-2 {
+    width: 230px;
+    height: 303px;
+    background-position: -312px -5px;
+}
+
+.sprite-robo_0007_Layer-16-copy {
+    width: 230px;
+    height: 303px;
+    background-position: -552px -5px;
+}
+
+.sprite-robo_0008_Layer-21-copy-3 {
+    width: 230px;
+    height: 303px;
+    background-position: -792px -5px;
+}
+
+.sprite-robo_0009_Layer-26 {
+    width: 230px;
+    height: 303px;
+    background-position: -5px -318px;
+}
+
+.sprite-robo_0010_Layer-27 {
+    width: 230px;
+    height: 303px;
+    background-position: -245px -318px;
+}
+
+.sprite-robo_0011_Layer-23 {
+    width: 230px;
+    height: 303px;
+    background-position: -485px -318px;
+}
+
+.sprite-robo_0012_Layer-16 {
+    width: 230px;
+    height: 303px;
+    background-position: -725px -318px;
+}
+
+.sprite-robo_0013__-copy {
+    width: 230px;
+    height: 303px;
+    background-position: -5px -631px;
+}
+
+.sprite-robo_0014_--- {
+    width: 230px;
+    height: 303px;
+    background-position: -245px -631px;
+}
+
+.sprite-robo_0015_Layer-17 {
+    width: 230px;
+    height: 303px;
+    background-position: -485px -631px;
+}
+
+.sprite-robo_0016_x_x {
+    width: 230px;
+    height: 303px;
+    background-position: -725px -631px;
+}
+
+.sprite-robo_0018_Layer-16-copy-5 {
+    width: 230px;
+    height: 303px;
+    background-position: -1032px -5px;
+}
+
+.sprite-robo_0019_Layer-20-copy-5 {
+    width: 243px;
+    height: 303px;
+    background-position: -965px -318px;
+}
+
+.sprite-robo_0020_Layer-20-copy-4 {
+    width: 243px;
+    height: 303px;
+    background-position: -965px -631px;
+}
+
+.sprite-robo_0021_Layer-20-copy-3 {
+    width: 243px;
+    height: 303px;
+    background-position: -5px -944px;
+}
+
+.sprite-robo_0022_Layer-20-copy-2 {
+    width: 243px;
+    height: 303px;
+    background-position: -258px -944px;
+}
+
+.sprite-robo_0023_Layer-20-copy {
+    width: 243px;
+    height: 303px;
+    background-position: -511px -944px;
+}
+
+.sprite-robo_0024_Layer-20 {
+    width: 243px;
+    height: 303px;
+    background-position: -764px -944px;
+}

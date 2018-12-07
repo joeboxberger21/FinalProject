@@ -13,17 +13,21 @@
 - Random room genration
 - Find all doors on the inside of the map and open them (Player in contained in the map, but can move room to room)
 - Room detects when player enters (eventually will close doors, then reopen when all enemies are dead)
+- Level will close and open doors based on if there are enemies or not
+- Player damage system
 ======================================================
 
 ====================BUGS====================
 - Room generation bug where rooms are on edges of map
-- When player enters room, spawers are created but not drawing or spawning
 ============================================
 
 ====================TODOs====================
 - Enemy Colision
 - Start adding sprite images
 - Enemy collision with player and health system
+- Game over screen
+- Start screen
+- Sprites and Animation
 =============================================
 '''
 
@@ -31,6 +35,7 @@ from settings import *
 from sprites import *
 import pygame as pg
 import random
+from os import path
 
 class Game():
     def __init__(self):
@@ -43,12 +48,13 @@ class Game():
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.running = True
+        self.spritesheet = Spritesheet(path.join('_images', 'character_spritesheet.png')) 
         
     def new(self):
         self.all_sprites = pg.sprite.Group()
         self.solid_objects = pg.sprite.Group()
         self.all_enemies = pg.sprite.Group()
-        self.player = Player(self.solid_objects)
+        self.player = Player(self.solid_objects, self)
         self.all_sprites.add(self.player, self.player.weapon, self.player.weapon.bullet_group)
 
         self.camera = Camera(WIDTH, HEIGHT)
@@ -81,8 +87,24 @@ class Game():
         self.player.weapon.mx, self.player.weapon.my = pg.mouse.get_pos()
         self.player.weapon.mx -= self.camera.camera.x
         self.player.weapon.my -= self.camera.camera.y
+
+        for room in self.all_rooms:
+            if room.spawners_group != None:
+                for spawner in room.spawners_group:
+                    self.all_sprites.add(spawner, spawner.enemies_group)
+                    self.all_enemies.add(spawner.enemies_group)
+
+        #Updates for level
+        #(Next time it would be better to make a level class and update there, but don't have enough time to redo level gen and room creation)
+        if self.all_enemies:
+            self.close_level_doors()
+        if len(self.all_enemies) == 0:
+            self.open_level_doors()
+
+
         self.all_sprites.update()
         self.camera.update(self.player)
+
         #TODO: Fix bug where bullets stop moving after enemy dies
 
     
@@ -94,12 +116,6 @@ class Game():
 
         for sprite in self.player.weapon.bullet_group:
             self.screen.blit(sprite.image, self.camera.apply(sprite))
-
-        try:
-            for sprite in self.all_enemies:
-                self.screen.blit(sprite.image, self.camera.apply(sprite))
-        except:
-            pass
         
         #TODO: Weapon rotation in weapon class instead of in game class
         # self.screen.blit(self.spawner.enemy.weapon.rotated_image, self.spawner.enemy.weapon.rotated_rect)
@@ -107,12 +123,6 @@ class Game():
         pg.draw.circle(self.screen, WHITE, pg.mouse.get_pos(), 8, 1)
         # Make a buffer screen, then make the buffer the main screen (Less lag)
         pg.display.flip()
-
-    def show_start_screen(self):
-        pass
-    
-    def show_game_screen(self):
-        pass
 
     def generate_room(self, x, y, w, h):
         self.new_room = Room(x, y, w, h, self.player)
@@ -125,15 +135,13 @@ class Game():
         for new_door in self.new_room.room_doors:
             for door in self.all_doors:
                 if pg.sprite.collide_rect(new_door, door):
-                    self.new_room.openable_doors.add(new_door, door)
-                    self.new_room.open_doors()
+                    self.openable_doors.add(door, new_door)
         self.all_doors.add(self.new_room.room_doors)
-
-
 
     def generate_level(self):
         self.all_rooms = pg.sprite.Group()
         self.all_doors = pg.sprite.Group()
+        self.openable_doors = pg.sprite.Group()
         #Room path generator
         level = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -188,19 +196,49 @@ class Game():
                 current_room_x += room_width
                 if tile == 1:
                     self.generate_room(current_room_x, current_room_y, room_width, room_height)
+        self.doors_are_open = False
+        self.open_level_doors()
 
         for row in level:
             print(row)
+        
+    def close_level_doors(self):
+        if self.doors_are_open == True:
+            print('doors closed')
+            self.doors_are_open = False
+            for door in self.openable_doors:
+                door.rect.y -= 50000
+        
+    def open_level_doors(self):
+        #Move the door away, but don't delete them, for later use
+        if self.doors_are_open == False:
+            print('doors opened')
+            self.doors_are_open = True
+            for door in self.openable_doors:
+                door.rect.y += 50000
 
+    def show_title_screen(self):
+        pass
 
+    def game_over(self):
+        self.draw_text('Game Over', 24, WHITE, WIDTH / 2, HEIGHT / 2)
+        pass
+    
+    def draw_text(self, text, size, color, x, y):
+        print('DRAWING TEXT')
+        self.font_name = pg.font.match_font('Arial')
+        font = pg.font.Font(self.font_name, size)
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect()
+        text_rect.midtop = (x, y)
+        self.screen.blit(text_surface, text_rect)
 
 
 g = Game()
-g.show_start_screen()
 pg.mouse.set_visible(False)
+g.show_title_screen()
 
 while g.running:
     g.new()
-    g.show_game_screen()
 
 pg.quit()

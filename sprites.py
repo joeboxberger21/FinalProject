@@ -7,15 +7,25 @@ import pygame.math
 import random, math
 from settings import *
 
+#====================SPRITES====================
+class Spritesheet():
+    def __init__(self, file):
+        self.spritesheet = pg.image.load(file).convert()
+    def get_image(self, x, y, width, height):
+        image = pg.Surface((width, height))
+        image.blit(self.spritesheet, (0,0), (x, y, width, height))
+        image = pg.transform.scale(image, (width // 2, height // 2))
+        return image
+
+
 #====================PLAYER USED CLASSES====================
 
 class Player(Sprite):
-    def __init__(self, solids):
+    def __init__(self, solids, game):
         Sprite.__init__(self)
-        #TODO: Player health and collisions with enemies
         self.solids = solids
-        self.width = 35
-        self.height = 45
+        self.width = 60 #35
+        self.height = 80 #45
         self.image = pg.Surface((self.width, self.height))
         self.image.fill(BLUE)
         self.rect = self.image.get_rect()
@@ -26,11 +36,35 @@ class Player(Sprite):
         self.falling = False
         self.weapon = Weapon(self)
         self.invulnerable = False
+        self.walking = False
         self.direction = 'd'
         self.dodging = False
+        self.game = game
+        self.health = 5
+        self.last_time_hit = 0
     
+    def load_images(self):
+        self.standing_frames = [self.game.spritesheet.get_image(5, 631, 230, 303)]
+        for frame in self.standing_frames:
+            frame.set_colorkey(BLACK)
+
     def update(self):
         self.weapon.update()
+        self.animate()
+
+        if self.health <= 0:
+            self.kill()
+            self.weapon.kill()
+            self.game.game_over()
+
+        if pg.time.get_ticks() - self.last_time_hit >= 5000 and self.invulnerable == True:
+            self.invulnerable = False
+
+        if self.invulnerable == False and pg.sprite.spritecollide(self, self.game.all_enemies, False):
+            self.health -= 1
+            self.invulnerable = True
+            print(self.health)
+            self.last_time_hit = pg.time.get_ticks()
 
         m1, m2, m3 = pg.mouse.get_pressed()
         keys = pg.key.get_pressed()
@@ -38,39 +72,58 @@ class Player(Sprite):
         if keys[pg.K_a] and keys[pg.K_w]:
             self.speed *= 0.7071
             self.direction = 'lu'
+            self.walking = True
         if keys[pg.K_a] and keys[pg.K_s]:
             self.speed *= 0.7071
             self.direction = 'ld'
+            self.walking = True
         if keys[pg.K_d] and keys[pg.K_w]:
             self.speed *= 0.7071
             self.direction = 'ru'
+            self.walking = True
         if keys[pg.K_d] and keys[pg.K_s]:
             self.speed *= 0.7071
             self.direction = 'rd'
-
+            self.walking = True
         if keys[pg.K_a]:
             self.move_player(-self.speed, 0)
             self.direction = 'l'
+            self.walking = True
         if keys[pg.K_d]:
             self.move_player(self.speed, 0)
             self.direction = 'r'
+            self.walking = True
         if keys[pg.K_s]:
             self.move_player(0, self.speed)
             self.direction = 'd'
+            self.walking = True
         if keys[pg.K_w]:
             self.move_player(0, -self.speed)
             self.direction = 'u'
+            self.walking = True
 
-            if m3 == 1 and self.dodging == False:
-                self.dodge()
-            if m3 == 0:
-                self.dodging = False
-
+        if m3 == 1 and self.dodging == False:
+            self.dodge()
+        if m3 == 0:
+            self.dodging = False
+        
         self.speed = 5
     
+    def animate(self):
+        now = pg.time.get_ticks()
+
+        # self.image = self.game.spritesheet.get_image(5, 631, 230, 303)
+        self.image = pg.transform.scale(self.game.spritesheet.get_image(725, 318, 230, 303), (60, 80))
+        # self.game.spritesheet.get_image(5, 631, 230, 303)
+
+
     def dodge(self):
         self.invulnerable = True
         self.dodging = True
+        if self.direction == 'u':
+            self.move_player(0, self.speed * 2)
+        self.invulnerable = False
+        self.dodging = False
         pass
     
     def move_axis(self, dx, dy):
@@ -96,6 +149,7 @@ class Player(Sprite):
             self.move_axis(dx, 0)
         if dy != 0:
             self.move_axis(0, dy)
+
         
 class Weapon(Sprite):
     def __init__(self, player):
@@ -207,8 +261,8 @@ class Enemy_Spawner(Sprite):
         # global enemy_type_glo = enemy_type
         self.width = 14
         self.height = 14
-        self.image = pg.Surface((self.width, self.height))
-        self.image.fill((250, 50, 250))
+        self.image = pg.Surface((self.width, self.height)).convert_alpha()
+        self.image.fill((250, 50, 250, 50))
         self.rect = self.image.get_rect()
         self.rect.center = (self.width/2, self.height/2)
         
@@ -219,17 +273,17 @@ class Enemy_Spawner(Sprite):
         self.max_enemies = max_enemies
         self.enemies_spawned = 0
         self.enemies_group = pg.sprite.Group()
-        self.spawn_interval = 5000
+        self.spawn_interval = 500
         self.last_time = 0
 
         self.enemy = Enemy(self.enemy_follow, self.enemy_health, self.enemy_bulletgroup)
 
     def update(self):
-        if self.enemies_spawned < self.max_enemies: #and (pg.time.get_ticks() - self.last_time) >= self.spawn_interval:
+        if self.enemies_spawned < self.max_enemies and (pg.time.get_ticks() - self.last_time) >= self.spawn_interval:
             self.spawn()
             self.enemies_spawned += 1
-        if self.enemies_spawned == self.max_enemies:
-            self.kill()
+        # if self.enemies_spawned == self.max_enemies:
+        #     self.kill()
         if self.enemies_group != None:
             self.enemies_group.update()
 
@@ -241,34 +295,30 @@ class Enemy_Spawner(Sprite):
         self.last_time = pg.time.get_ticks()
         print('Enemy Attempting to Spawn!')
         print(self.enemies_group)
-        print(self.rect.center)
-        print(self.enemy.rect.center)
 
-#TODO: Redo Enemy to add Colisions (and better AI?)
+#TODO: Add Enemy Colisions (and better AI?)
 class Enemy(Sprite):
     def __init__(self, follow, health, bulletgroup):
         Sprite.__init__(self)
         self.health = health
         self.bulletgroup = bulletgroup
-        self.width = 35
-        self.height = 45
+        self.width = 60
+        self.height = 80
         self.image = pg.Surface((self.width, self.height))
         self.image.fill(GREEN)
         self.rect = self.image.get_rect()
         self.rect.center = (self.width / 2, self.height / 2)
-        self.vx = 0
-        self.vy = 0
         self.x = 0
         self.y = 0
         self.follow = follow
-        self.speed = 3
+        self.speed = 2
         self.weapon = AI_Weapon(self)
     
     def update(self):
+        self.image = pg.transform.scale(self.follow.game.spritesheet.get_image(5, 318, 243, 303), (60, 80)).convert_alpha()
         # Delete the object if all health is lost
         if self.health <= 0:
             self.kill()
-            print('Enemy Killed')
         #Pythag to find distance from player
         self.c = math.sqrt((self.follow.rect.x - self.rect.x) **2 + (self.follow.rect.y - self.rect.y)**2)
 
@@ -377,21 +427,22 @@ class Room(Sprite):
         self.player = player
         self.wall_group = pg.sprite.Group()
         self.room_doors = pg.sprite.Group()
-        self.openable_doors = pg.sprite.Group()
-        self.room_enemies = pg.sprite.Group()
+        self.spawners_group = pg.sprite.Group()
         self.wall_thickness = 20
         self.x = x
         self.y = y
         self.width = w
         self.height = h
-        self.image = pg.Surface((self.width, self.height)).convert_alpha()
+        self.image = pg.Surface((self.width - 119 - self.wall_thickness, self.height - 159 - self.wall_thickness)).convert_alpha()
         self.image.fill((0, 0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.center = (self.width / 2, self.height / 2)
-        self.rect = self.rect.move(x, y)
+        self.rect.x, self.rect.y = (x + 59 + self.wall_thickness), (y + 79 + self.wall_thickness)
         self.new_spawner = None
         self.player_inside = False
         self.entered = False
+        self.doors_are_open = False
+        self.enemies_insdie = None
         #Top walls
         self.wallT1 = Wall(x, y, (self.width + self.wall_thickness) * (4/9), self.wall_thickness)
 
@@ -433,23 +484,11 @@ class Room(Sprite):
         self.player_inside = pg.sprite.collide_rect(self.player, self)
         if self.player_inside and self.entered == False:
             self.entered = True
-            self.new_spawner = Enemy_Spawner(1, self.player, 100, self.player.weapon.bullet_group)
-            self.new_spawner.rect.x, self.new_spawner.rect.y = (random.randint(self.x + self.wall_thickness, self.x + self.width - self.wall_thickness), random.randint(self.y + self.wall_thickness, self.y + self.height - self.wall_thickness))
-            self.room_enemies.add(self.new_spawner.enemies_group)
-            print('spawner @: ' + str(self.new_spawner.rect))
-        
-        if self.new_spawner != None:
-            self.new_spawner.update()
-            
-    def open_doors(self):
-        #Move the door away, but don't delete them, for later use
-        for door in self.openable_doors:
-            door.rect = door.rect.move(door.rect.x + 50000, door.rect.y + 50000)
-    
-    def close_doors(self):
-        #Move the door away, but don't delete them, for later use
-        for door in self.openable_doors:
-            door.rect = door.rect.move(door.rect.x - 50000, door.rect.y - 50000)
+            for i in range(random.randint(1, 3)):
+                self.new_spawner = Enemy_Spawner(random.randint(3, 5), self.player, random.randint(100, 150), self.player.weapon.bullet_group)
+                self.new_spawner.rect.x, self.new_spawner.rect.y = (random.randint(self.x + self.wall_thickness, self.x + self.width - self.wall_thickness), random.randint(self.y + self.wall_thickness, self.y + self.height - self.wall_thickness))
+                self.spawners_group.add(self.new_spawner)
+                print('spawner @: ' + str(self.new_spawner.rect))
 
 class Camera(Sprite):
     def __init__(self, width, height):
