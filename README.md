@@ -1,4 +1,5 @@
 # FinalProject
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A top down shooter with a computer theme.
 Made for the Bellarmine Intro to Computer Programming class
 
@@ -24,8 +25,6 @@ Made for the Bellarmine Intro to Computer Programming class
 - Health UI?
 =============================================
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 ====================Reflection====================
 This was a great learning experience for me, I got to step into game development w/o an engine and w/o any instruction.
 I also have very little experience with python, and zero experience with pygame so it was also a learning process.
@@ -34,3 +33,4 @@ done in a couple months. I still didn't reach my goal completely but I got close
 I feel like it is at least presentable, and I didn't even have to cram. Overall seeing this project come to life was
 a fun experience and I definitely learned a lot.
 ==================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
