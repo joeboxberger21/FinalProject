@@ -11,9 +11,10 @@
 ====================RECENTLY ADDED====================
 - Random room genration
 - Find all doors on the inside of the map and open them (Player in contained in the map, but can move room to room)
-- Room detects when player enters (eventually will close doors, then reopen when all enemies are dead)
+- Room detects when player enters
 - Level will close and open doors based on if there are enemies or not
 - Player damage system
+- Enemy Collision w/ other enemies
 - Player weapon spread shot system
 - Player weapon upgrade system
 ======================================================
@@ -23,11 +24,9 @@
 ============================================
 
 ====================TODOs====================
-- Enemy Colision
-- Enemy Collision with each other
 - Game over screen
 - Start screen
-- Animation
+- Enemy Animation
 - Health UI?
 =============================================
 '''
