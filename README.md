@@ -10,7 +10,7 @@ Made for the Bellarmine Intro to Computer Programming class
 - Player damage system
 - Enemy Collision w/ other enemies
 - Player weapon spread shot system
-    - Player weapon upgrade system
+- Player weapon upgrade system
 ======================================================
 
 ====================BUGS====================
