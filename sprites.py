@@ -17,17 +17,17 @@ class Spritesheet():
         image = pg.transform.scale(image, (width // 2, height // 2))
         return image
 
-
 #====================PLAYER USED CLASSES====================
 
 class Player(Sprite):
     def __init__(self, solids, game):
         Sprite.__init__(self)
         self.solids = solids
-        self.width = 60 #35
+        self.game = game
+        self.width = 55 #35
         self.height = 80 #45
-        self.image = pg.Surface((self.width, self.height))
-        self.image.fill(BLUE)
+        # self.image = pg.Surface((self.width, self.height))
+        self.image = pg.transform.scale(self.game.spritesheet.get_image(725, 318, 240, 313), (60, 80))
         self.rect = self.image.get_rect()
         self.rect.center = (self.width / 2, self.height / 2)
         self.rect.x = 7150
@@ -37,20 +37,32 @@ class Player(Sprite):
         self.weapon = Weapon(self)
         self.invulnerable = False
         self.walking = False
-        self.direction = 'd'
+        self.y_direction = 'd'
+        self.x_direction = 'r'
         self.dodging = False
-        self.game = game
-        self.health = 5
+        self.health = 9
         self.last_time_hit = 0
-    
-    def load_images(self):
-        self.standing_frames = [self.game.spritesheet.get_image(5, 631, 230, 303)]
-        for frame in self.standing_frames:
-            frame.set_colorkey(BLACK)
+        self.enemies_killed = 0
+
+        self.forward_right_walk_cycle = [pg.transform.scale(self.game.spritesheet.get_image(312, 5, 240, 313), (60, 80)), pg.transform.scale(self.game.spritesheet.get_image(552, 5, 240, 313), (60, 80))]
+        self.forward_left_walk_cycle = []
+        for sprite in self.forward_right_walk_cycle:
+            self.forward_left_walk_cycle.append(pg.transform.flip(sprite, True, False))
+        
+        self.back_right_walk_cycle = [pg.transform.scale(self.game.spritesheet.get_image(258, 954, 240, 313), (60, 80)), pg.transform.scale(self.game.spritesheet.get_image(511, 954, 240, 313), (60, 80))]
+        self.back_left_walk_cycle = []
+        for sprite in self.back_right_walk_cycle:
+            self.back_left_walk_cycle.append(pg.transform.flip(sprite, True, False))
+
+
+
+        self.current_frame = 0
+        self.last_frame = 0
 
     def update(self):
         self.weapon.update()
         self.animate()
+        vx, vy = 0, 0
 
         if self.health <= 0:
             self.kill()
@@ -68,63 +80,70 @@ class Player(Sprite):
 
         m1, m2, m3 = pg.mouse.get_pressed()
         keys = pg.key.get_pressed()
-        # 1/square root 2 = ~0.7071, use this to lower the vx and vy if moving both at once, this number is found b/c of a^2 + b^2 = c^2
-        if keys[pg.K_a] and keys[pg.K_w]:
-            self.speed *= 0.7071
-            self.direction = 'lu'
-            self.walking = True
-        if keys[pg.K_a] and keys[pg.K_s]:
-            self.speed *= 0.7071
-            self.direction = 'ld'
-            self.walking = True
-        if keys[pg.K_d] and keys[pg.K_w]:
-            self.speed *= 0.7071
-            self.direction = 'ru'
-            self.walking = True
-        if keys[pg.K_d] and keys[pg.K_s]:
-            self.speed *= 0.7071
-            self.direction = 'rd'
-            self.walking = True
+
         if keys[pg.K_a]:
-            self.move_player(-self.speed, 0)
-            self.direction = 'l'
+            vx = -self.speed
+            self.x_direction = 'l'
             self.walking = True
         if keys[pg.K_d]:
-            self.move_player(self.speed, 0)
-            self.direction = 'r'
+            vx = self.speed
+            self.x_direction = 'r'
             self.walking = True
         if keys[pg.K_s]:
-            self.move_player(0, self.speed)
-            self.direction = 'd'
+            vy = self.speed
+            self.y_direction = 'd'
             self.walking = True
         if keys[pg.K_w]:
-            self.move_player(0, -self.speed)
-            self.direction = 'u'
+            vy = -self.speed
+            self.y_direction = 'u'
             self.walking = True
+        if vx != 0 and vy != 0:
+            # 1/square root 2 = ~0.7071, use this to lower the vx and vy if moving both at once, this number is found b/c of pythag theorm
+            vx *= 0.7071
+            vy *= 0.7071
 
+        if not keys[pg.K_w] and not keys[pg.K_a] and not keys[pg.K_s] and  not keys[pg.K_d]:
+            self.walking = False
+        
         if m3 == 1 and self.dodging == False:
             self.dodge()
         if m3 == 0:
             self.dodging = False
         
-        self.speed = 5
+        self.move_player(vx, vy)
     
     def animate(self):
         now = pg.time.get_ticks()
-
-        # self.image = self.game.spritesheet.get_image(5, 631, 230, 303)
-        self.image = pg.transform.scale(self.game.spritesheet.get_image(725, 318, 230, 303), (60, 80))
-        # self.game.spritesheet.get_image(5, 631, 230, 303)
+        if self.walking == False:
+            if self.y_direction == 'd':
+                if self.x_direction == 'r':
+                    self.image = pg.transform.scale(self.game.spritesheet.get_image(725, 318, 240, 313), (60, 80))
+                if self.x_direction == 'l':
+                    self.image = pg.transform.flip(pg.transform.scale(self.game.spritesheet.get_image(725, 318, 240, 313), (60, 80)), True, False)
+        if self.walking:
+            if now - self.last_frame >= 100:
+                self.current_frame += 1
+                self.last_frame = pg.time.get_ticks()
+            if self.y_direction == 'd':
+                if self.x_direction == 'r':
+                    self.image = self.forward_right_walk_cycle[self.current_frame % 2]
+                if self.x_direction == 'l':
+                    self.image = self.forward_left_walk_cycle[self.current_frame % 2]
+            if self.y_direction == 'u':
+                if self.x_direction == 'r':
+                    self.image = self.back_right_walk_cycle[self.current_frame % 2]
+                if self.x_direction == 'l':
+                    self.image = self.back_left_walk_cycle[self.current_frame % 2]
+        
+        self.image.set_colorkey(BLACK)
 
 
     def dodge(self):
         self.invulnerable = True
         self.dodging = True
-        if self.direction == 'u':
-            self.move_player(0, self.speed * 2)
+        #dodge code goes here
         self.invulnerable = False
         self.dodging = False
-        pass
     
     def move_axis(self, dx, dy):
         # Move the rect
@@ -150,26 +169,24 @@ class Player(Sprite):
         if dy != 0:
             self.move_axis(0, dy)
 
-        
 class Weapon(Sprite):
     def __init__(self, player):
         Sprite.__init__(self)
-        self.damage = 10
-        self.width = 15
-        self.height = 55
+        self.damage = 100
         self.mx, self.my = 0, 0
+        self.player = player
 
-        self.image = pg.Surface((self.width, self.height)).convert_alpha()
+        # self.image = pg.Surface((self.width, self.height)).convert_alpha() 5, 5, 297, 155
+        self.image = pg.transform.scale(pg.transform.flip(pg.transform.rotate(self.player.game.spritesheet.get_image(5, 5, 297, 155).convert_alpha(), 90), False, True), (math.floor(155/3.5), math.floor(297/3.5)))
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
         self.rotated_image = self.image
         self.original_image = self.image
-
-        self.image.fill(WHITE)
         self.rect = self.image.get_rect()
         self.pivot_offset = pg.math.Vector2(self.rect.x, self.rect.y)
         self.rotated_rect = self.image.get_rect()
         self.original_rect = self.rect
         self.rect.center = (self.width / 2, self.height / 2)
-        self.player = player
         self.image_rect = self.image.get_rect(center=self.rect.center)
         self.deg_rotate = 0
         self.bullet_group = pg.sprite.Group()
@@ -177,8 +194,12 @@ class Weapon(Sprite):
 
         self.holding_side = 1
         self.pivot_side = 1
+        self.spread_shot = 0
+        self.next_upgrade = 15
     
     def update(self):
+        self.image.set_colorkey(BLACK)
+
         m1, m2, m3 = pg.mouse.get_pressed()
         self.rect = self.original_rect
         self.image = self.original_image
@@ -205,10 +226,11 @@ class Weapon(Sprite):
             self.pivot_side = 1
             self.rect.x = self.player.rect.x - (self.width  / 2) + (self.player.width) - 10
             self.pivot = self.player.width
+            self.image = pg.transform.flip(self.image, True, False)
         
         self.pivot_offset = pg.math.Vector2(0, self.pivot).rotate(-self.deg_rotate)
 
-        self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate)
+        self.rotated_image = pg.transform.rotate(self.image, self.deg_rotate).convert_alpha()
         self.rotated_rect = self.rotated_image.get_rect(center=self.rect.center + self.pivot_offset)
 
         self.image = self.rotated_image
@@ -220,13 +242,23 @@ class Weapon(Sprite):
         if self.shooting == False and m1 == 1:
                 self.shooting = True
                 self.shoot()
+        
+        if self.player.enemies_killed == self.next_upgrade:
+            self.spread_shot += 1
+            self.next_upgrade *= 2
 
     def shoot(self):
-        self.bullet = Projectile(self, self.rect.center + self.pivot_offset, self.player.solids)
+        offset = 0
+        self.bullet = Projectile(self, self.rect.center + self.pivot_offset, self.player.solids, -self.deg_rotate)
         self.bullet_group.add(self.bullet)
+        for i in range(self.spread_shot):
+            offset += 20
+            self.bullet1 = Projectile(self, self.rect.center + self.pivot_offset, self.player.solids, -self.deg_rotate + offset)
+            self.bullet2 = Projectile(self, self.rect.center + self.pivot_offset, self.player.solids, -self.deg_rotate - offset)
+            self.bullet_group.add(self.bullet1, self.bullet2)
 
 class Projectile(Sprite):
-    def __init__(self, weapon, pos, solid_objects):
+    def __init__(self, weapon, pos, solid_objects, rotate):
         Sprite.__init__(self)
         self.weapon = weapon
         self.solid_objects = solid_objects
@@ -237,7 +269,8 @@ class Projectile(Sprite):
         self.rect = self.image.get_rect(center=pos)
         self.speed = 6
         self.pos = pg.math.Vector2(pos)
-        self.vel = pg.math.Vector2(0, self.speed).rotate(-weapon.deg_rotate)
+        self.rotate = rotate
+        self.vel = pg.math.Vector2(0, self.speed).rotate(self.rotate)
         self.creation_time = pg.time.get_ticks()
         
     def update(self):
@@ -246,8 +279,8 @@ class Projectile(Sprite):
         self.rect.center = self.pos  # Update rect to be at position
         wall_collisions = pg.sprite.spritecollide(self, self.solid_objects, False)
 
-        #If nothing collides with bullet, delete it after 10 sec
-        if (pg.time.get_ticks() - self.creation_time) > 10000:
+        #If nothing collides with bullet, delete it after 5 sec
+        if (pg.time.get_ticks() - self.creation_time) > 5000:
             self.kill()
         #Kill projectile if it collides with a wall
         if wall_collisions:
@@ -282,8 +315,8 @@ class Enemy_Spawner(Sprite):
         if self.enemies_spawned < self.max_enemies and (pg.time.get_ticks() - self.last_time) >= self.spawn_interval:
             self.spawn()
             self.enemies_spawned += 1
-        # if self.enemies_spawned == self.max_enemies:
-        #     self.kill()
+        if self.enemies_spawned == self.max_enemies:
+            self.kill()
         if self.enemies_group != None:
             self.enemies_group.update()
 
@@ -302,22 +335,22 @@ class Enemy(Sprite):
         Sprite.__init__(self)
         self.health = health
         self.bulletgroup = bulletgroup
+        self.follow = follow
         self.width = 60
         self.height = 80
-        self.image = pg.Surface((self.width, self.height))
-        self.image.fill(GREEN)
+        self.image = pg.transform.scale(self.follow.game.spritesheet.get_image(5, 318, 243, 303), (60, 80))
         self.rect = self.image.get_rect()
         self.rect.center = (self.width / 2, self.height / 2)
         self.x = 0
         self.y = 0
-        self.follow = follow
         self.speed = 2
-        self.weapon = AI_Weapon(self)
+        self.x_direction = 'r'
+        self.y_direction = 'u'
     
     def update(self):
-        self.image = pg.transform.scale(self.follow.game.spritesheet.get_image(5, 318, 243, 303), (60, 80)).convert_alpha()
         # Delete the object if all health is lost
         if self.health <= 0:
+            self.follow.enemies_killed += 1
             self.kill()
         #Pythag to find distance from player
         self.c = math.sqrt((self.follow.rect.x - self.rect.x) **2 + (self.follow.rect.y - self.rect.y)**2)
@@ -328,16 +361,58 @@ class Enemy(Sprite):
             self.y = (self.follow.rect.y - self.rect.y) / self.c
 
         #use multiplier to effect speed
-        self.rect.x += self.x * self.speed
-        self.rect.y += self.y * self.speed
+        # self.rect.x += self.x * self.speed
+        # self.rect.y += self.y * self.speed
         
+
+        if self.x > 0:
+            self.move_player(self.speed, 0)
+            self.x_direction = 'r'
+        if self.x < 0:
+            self.move_player(-self.speed, 0)
+            self.x_direction = 'l'
+        
+        if self.y < 0:
+            self.move_player(0, -self.speed)
+            self.y_direction = 'd'
+        if self.y > 0:
+            self.move_player(0, self.speed)
+            self.y_direction = 'u'
+
+
         bullet_collisions = pg.sprite.spritecollide(self, self.bulletgroup, True)
         #If there is bullet from the player colliding with the enemy, it will add it to the group, and if there is anything in this group, remove health
         if bullet_collisions:
             self.health -= self.follow.weapon.damage
-        self.weapon.update()
 
-#TODO: Just make this a sub class of Weapon instead of new class
+        self.image.set_colorkey(BLACK)
+
+    def move_axis(self, dx, dy):
+        # Move the rect
+        self.rect.x += dx
+        self.rect.y += dy
+
+        if len(self.follow.game.all_enemies) != 0: 
+            for enemy in self.follow.game.all_enemies:
+                if enemy != self:
+                    if self.rect.colliderect(enemy.rect):
+                        if dx > 0:
+                            self.rect.right = enemy.rect.left
+                        if dx < 0:
+                            self.rect.left = enemy.rect.right
+                        if dy > 0:
+                            self.rect.bottom = enemy.rect.top
+                        if dy < 0:
+                            self.rect.top = enemy.rect.bottom
+        
+    def move_player(self, dx, dy):
+        # Move each axis separately. Checks for collisions both times.
+        if dx != 0:
+            self.move_axis(dx, 0)
+        if dy != 0:
+            self.move_axis(0, dy)
+        
+#TODO: Just make this a subclass of Weapon instead of new class
 class AI_Weapon(Sprite):
     def __init__(self, user):
         Sprite.__init__(self)
@@ -484,7 +559,7 @@ class Room(Sprite):
         self.player_inside = pg.sprite.collide_rect(self.player, self)
         if self.player_inside and self.entered == False:
             self.entered = True
-            for i in range(random.randint(1, 3)):
+            for i in range(random.randint(3, 5)):
                 self.new_spawner = Enemy_Spawner(random.randint(3, 5), self.player, random.randint(100, 150), self.player.weapon.bullet_group)
                 self.new_spawner.rect.x, self.new_spawner.rect.y = (random.randint(self.x + self.wall_thickness, self.x + self.width - self.wall_thickness), random.randint(self.y + self.wall_thickness, self.y + self.height - self.wall_thickness))
                 self.spawners_group.add(self.new_spawner)

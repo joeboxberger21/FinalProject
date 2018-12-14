@@ -2,7 +2,6 @@
 #GitHub link: https://github.com/joeboxberger21/FinalProject
 
 #====================SOURCES====================
-#goo.gl/2KMivS
 #https://python-forum.io/Thread-PyGame-Enemy-AI-and-collision-part-6
 #https://www.pygame.org/project-Rect+Collision+Response-1061-.html
 #https://www.youtube.com/watch?v=3zV2ewk-IGU
@@ -15,6 +14,8 @@
 - Room detects when player enters (eventually will close doors, then reopen when all enemies are dead)
 - Level will close and open doors based on if there are enemies or not
 - Player damage system
+- Player weapon spread shot system
+- Player weapon upgrade system
 ======================================================
 
 ====================BUGS====================
@@ -23,11 +24,11 @@
 
 ====================TODOs====================
 - Enemy Colision
-- Start adding sprite images
-- Enemy collision with player and health system
+- Enemy Collision with each other
 - Game over screen
 - Start screen
-- Sprites and Animation
+- Animation
+- Health UI?
 =============================================
 '''
 
@@ -48,7 +49,7 @@ class Game():
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.running = True
-        self.spritesheet = Spritesheet(path.join('_images', 'character_spritesheet.png')) 
+        self.spritesheet = Spritesheet(path.join('_images', 'character_spritesheets.png')) 
         
     def new(self):
         self.all_sprites = pg.sprite.Group()
@@ -58,8 +59,8 @@ class Game():
         self.all_sprites.add(self.player, self.player.weapon, self.player.weapon.bullet_group)
 
         self.camera = Camera(WIDTH, HEIGHT)
-        # self.generate_room(-50, -50, 800, 500)
         self.generate_level()
+        self.player_alive = True
         #Run game, update info, draw based on update, etc
         self.run()
 
@@ -119,7 +120,8 @@ class Game():
         
         #TODO: Weapon rotation in weapon class instead of in game class
         # self.screen.blit(self.spawner.enemy.weapon.rotated_image, self.spawner.enemy.weapon.rotated_rect)
-        
+        if self.player_alive == False:
+            self.draw_text('GAME OVER', 120, WHITE, WIDTH / 2, HEIGHT / 2)
         pg.draw.circle(self.screen, WHITE, pg.mouse.get_pos(), 8, 1)
         # Make a buffer screen, then make the buffer the main screen (Less lag)
         pg.display.flip()
@@ -221,13 +223,11 @@ class Game():
         pass
 
     def game_over(self):
-        self.draw_text('Game Over', 24, WHITE, WIDTH / 2, HEIGHT / 2)
-        pass
+        self.player_alive = False
     
     def draw_text(self, text, size, color, x, y):
-        print('DRAWING TEXT')
-        self.font_name = pg.font.match_font('Arial')
-        font = pg.font.Font(self.font_name, size)
+        font_name = pg.font.match_font('pixelmix')
+        font = pg.font.Font(font_name, size)
         text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()
         text_rect.midtop = (x, y)
